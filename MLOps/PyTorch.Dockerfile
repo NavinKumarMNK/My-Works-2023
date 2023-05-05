@@ -21,7 +21,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxext6 \
     libxrender-dev \
     net-tools \
+    htop \ 
     && rm -rf /var/lib/apt/lists/*
+
 
 COPY ./PyTorch_requirements.txt requirements.txt
 
@@ -36,8 +38,5 @@ EXPOSE 8080
 EXPOSE 5000
 
 RUN chmod -R a+w /workspace
-
-RUN apt-get update && apt-get upgrade -y
-
 
 CMD ["tail", "-f", "/dev/null"]
