@@ -97,7 +97,6 @@ class TestTranslator(unittest.TestCase):
         self.assertIn('sequence', output[0])
         self.assertIn('labels', output[0])
         self.assertIn('scores', output[0])
-        print(len(output[0]['scores']))
         self.assertEqual(len(output[0]['scores']), 4)
 
     def test_object_detection_with_url(self):

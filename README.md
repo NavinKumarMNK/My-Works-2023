@@ -88,46 +88,31 @@ This repository contains a FastAPI service that acts as a middleware to translat
             }
             ```
 
-5. Sample CURL Request
-    ```bash
-    curl -X POST -H "Content-Type: application/json" -d '{
-        "hf_pipeline": "text-generation",
-        "model_deployed_url": "https://text-generation-ml-intern-assign.tfy-gcp-standard-usce1.devtest.truefoundry.tech/v2/models/text-generation/infer",
-        "inputs": "Hello, how are you today? ",
-        "parameters": {
-            "min_new_tokens": 10,
-            "do_sample": true,
-            "temperature": 1.0,
-            "max_new_tokens": 20,
-            "num_return_sequences": 5
-        }
-    }' http://0.0.0.0:8000/predict
-  
-    ```
-
-6. Devlopement
+5. Devlopement
     1. Seldon V2 Inference Request Format for updating custom Models Parser
         - You can add your custom Hugging Face Inference Parser in "/api/parser.py"
 
         ```python
         class TextGenerationParser(Parser):
-            def parse(self) -> Seldonv2InferenceRequest:  
-                return Seldonv2InferenceRequest(
-                    inputs=[Input(
+            def parse(self) -> Seldonv2InferenceRequest:        
+                inputs=[Input(
                         name="array_inputs", 
                         shape=[-1], 
                         datatype="BYTES", 
-                        data=self.inputs,
-                        parameters=Parameters(content_type="str",
-                                            headers=self.parameters,
-                                            additionalProp1=self.parameters,
-                                            **self.parameters)
-                    )],
-                    parameters=Parameters(
-                            content_type="hg_jsonlist",
-                            additionalProp1=self.parameters,
-                            **self.parameters
-                        )
+                        data=[self.inputs],
+                        parameters=Parameters(content_type="str")
+                    ),
+                    *[Input(
+                        name=key,
+                        shape=[-1],
+                        datatype=self.data_type(self.inputs),
+                        data=[value if isinstance(value, bool) == False else "true" if value == True else "false"],
+                        parameters=Parameters(content_type="hg_json")
+                    ) for key, value in self.parameters.items()],
+                    ]
+                return Seldonv2InferenceRequest(
+                    inputs=inputs,  
+                    parameters=Parameters(content_type="hg_json")     
                 )
             
         ```
@@ -137,21 +122,58 @@ This repository contains a FastAPI service that acts as a middleware to translat
         ```python
         class Input(BaseModel):
             name: str
-            shape: list
+            shape: List
             datatype: str
-            parameters: Optional[Union[Parameters, Dict]] = Field(default=Parameters(content_type='application/json'))
-            data: str
+            parameters: Optional[Union[Parameters, Dict]] = Field(default=Parameters(content_type='hg_json'))
+            data: Union[str, List[str], Image.Image]
+            class Config:
+                arbitrary_types_allowed = True
 
         class ResponseOutputs(BaseModel):
             name: str
             shape: list
             datatype: str
-            parameters: Optional[Union[Parameters, Dict, None]] = Field(default_factory=None)
-            data: List[str]
+            parameters: Optional[Union[Parameters, Dict, None]] = Field(default_factory=Parameters(
+                                                            content_type='hg_json'
+                                                                ))
+            data: List[Union[Dict, List]]
+
+            @validator('data', pre=True)
+            def data_to_dict(cls, v):
+                dct = []
+                for item in v:
+                    if isinstance(v, list):
+                        dct.append(json.loads(item))
+                    else:
+                        dct.append(json.loads(item))
+                return dct
         ```
 
     - All above Parsers & Types are Pydantic Models, you can refer to the [Pydantic Docs](https://pydantic-docs.helpmanual.io/) for more details.
     
     
-    
-    
+6. Deployment as Docker Container
+
+    ```bash
+        # Build the Docker image (from the same directory as the Dockerfile)
+        docker build -t my-fastapi-app .
+
+        # Run the Docker container
+        docker run -d -p 8000:8000 my-fastapi-app
+
+        # Test it
+        curl -X POST -H "Content-Type: application/json" -d '{
+            "hf_pipeline": "text-generation",
+            "model_deployed_url": "https://text-generation-ml-intern-assign.tfy-gcp-standard-usce1.devtest.truefoundry.tech/v2/models/text-generation/infer",
+            "inputs": "Hello, how are you today? ",
+            "parameters": {
+                "min_new_tokens": 10,
+                "do_sample": true,
+                "temperature": 1.0,
+                "max_new_tokens": 20,
+                "num_return_sequences": 5
+            }
+        }' http://<docker-container-ip>:8000/predict
+
+    ```
+

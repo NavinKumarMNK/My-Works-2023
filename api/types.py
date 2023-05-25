@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field, Extra, validator
 from typing import Callable, Dict, Any, Optional, Union, List, AnyStr
 import json
 from PIL import Image
+
 class HuggingFacePredictRequest(BaseModel):
     hf_pipeline: str
     model_deployed_url: str
@@ -42,15 +43,11 @@ class ResponseOutputs(BaseModel):
     @validator('data', pre=True)
     def data_to_dict(cls, v):
         dct = []
-        print("Variable V", v)
         for item in v:
             if isinstance(v, list):
-                print("Ensured it as List", item)
                 dct.append(json.loads(item))
             else:
-                print("Ensured it as Dict", *v)
                 dct.append(json.loads(item))
-        print(dct)
         return dct
         
         
@@ -76,7 +73,7 @@ class Seldonv2InferenceResponse(BaseModel):
     model_name: str
     model_version: Optional[Union[str, None]]
     id : str
-    parameters: Optional[Union[Parameters, Dict, None]]
+    parameters: Optional[Union[Parameters, Dict, None]] 
     outputs: List[ResponseOutputs]
 
     def dict(self, exclude_unset=True, exclude_none=True, **kwargs):
@@ -89,4 +86,3 @@ class Seldonv2InferenceResponse(BaseModel):
             exclude_unset=exclude_unset, exclude_none=exclude_none, **kwargs
         )
     
-                            

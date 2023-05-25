@@ -15,8 +15,8 @@ async def predict(request: HuggingFacePredictRequest):
              v2 Inference Request is Seldon v2 Inference API format
              Returns the v2 Inference Response
 
-    @param : request: PredictRequest    
-    @return: Dict
+    @param : request: HugginFacePredictRequest    
+    @return: Json Response
     '''
 
     # Convert Hugging Face Request to Seldon v2 Request
@@ -26,7 +26,6 @@ async def predict(request: HuggingFacePredictRequest):
 
     # Send Seldon v2 Request to Seldon v2 Server & recive Seldonv2 Response
     async with httpx.AsyncClient() as client:
-        
         response = await client.post(model_endpoint, 
                                 data=seldon_request.json(),
                                 timeout=60)

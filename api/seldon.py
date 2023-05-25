@@ -8,6 +8,11 @@ class HuggingFaceSeldonParser():
         self.request = request
 
     def parsev2(self) -> Tuple[Seldonv2InferenceRequest, str]:
+        """
+        @brief : Takes Requets:PredictRequest & converts in v2 Inference Request
+        @param : request: HugginFacePredictRequest
+        @return: Tuple[Seldonv2InferenceRequest, str]
+        """
         parser_obj = PARSE_DICT[self.request.hf_pipeline](
             self.request.inputs, self.request.parameters)
         self.seldon_request: Seldonv2InferenceRequest = parser_obj.parse()

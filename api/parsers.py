@@ -6,6 +6,7 @@ import base64
 from PIL import Image
 
 class Parser:
+    "Base Parser Class"
     def __init__(self, inputs:Union[dict, str], parameters:Dict[str, Any] = None):
         self.inputs = inputs
         self.parameters = parameters
@@ -16,15 +17,24 @@ class Parser:
 
 class ObjectDetectionParser(Parser):
     def is_base64(self, s):
+        """
+        @brief : Checks if the input is base64 encoded
+        @param : s: str
+        @return: bool
+        """
+        
         try:
-            # Decoding the provided string using Base64
             decoded_bytes = base64.b64decode(s)
-            # Checking if the decoded data starts with common image file headers
             return decoded_bytes.startswith(b'\xff\xd8') or decoded_bytes.startswith(b'\x89PNG')
         except (binascii.Error, ValueError):
             return False
         
     def parse(self) -> Seldonv2InferenceRequest:
+        """
+        @brief : Parses the input to Seldonv2InferenceRequest
+        @param : None {input & parameter from base class}
+        @return: Seldonv2InferenceRequest
+        """
         if self.is_base64(self.inputs):
             content_type='pillow_image'
         else:
@@ -42,6 +52,11 @@ class ObjectDetectionParser(Parser):
         
 class TextGenerationParser(Parser):
     def data_type(self, s):
+        """
+        @brief : Checks the data type of the input
+        @param : s: str
+        @return: str
+        """
         if isinstance(s, int):
             return "INT32"
         elif isinstance(s, float):
@@ -51,10 +66,12 @@ class TextGenerationParser(Parser):
         else:
             return "BYTES"
 
-    def parse(self) -> Seldonv2InferenceRequest:
-        for key, value in self.parameters.items():
-            print (key, type(value))
-        
+    def parse(self) -> Seldonv2InferenceRequest: 
+        """
+        @brief : Parses the input to Seldonv2InferenceRequest
+        @param : None {input & parameter from base class}
+        @return: Seldonv2InferenceRequest
+        """       
         inputs=[Input(
                 name="array_inputs", 
                 shape=[-1], 
@@ -62,6 +79,7 @@ class TextGenerationParser(Parser):
                 data=[self.inputs],
                 parameters=Parameters(content_type="str")
             ),
+            #Parameters of the model
             *[Input(
                 name=key,
                 shape=[-1],
@@ -77,6 +95,11 @@ class TextGenerationParser(Parser):
     
 class TokenClassificationParser(Parser):
     def parse(self) -> Seldonv2InferenceRequest:
+        """
+        @brief : Parses the input to Seldonv2InferenceRequest
+        @param : None {input & parameter from base class}
+        @return: Seldonv2InferenceRequest
+        """ 
         return Seldonv2InferenceRequest(
             inputs=[Input(
                 name="args", 
@@ -85,13 +108,13 @@ class TokenClassificationParser(Parser):
                 data=self.inputs,
             )],
         )
-
-
 class ZeroShotClassificationParser(Parser):
     def parse(self) -> Seldonv2InferenceRequest:
-        for key, value in self.parameters.items():
-            print (key, value)
-
+        """
+        @brief : Parses the input to Seldonv2InferenceRequest
+        @param : None {input & parameter from base class}
+        @return: Seldonv2InferenceRequest
+        """
         return Seldonv2InferenceRequest(
             inputs=[Input(
                 name="array_inputs", 
@@ -99,8 +122,9 @@ class ZeroShotClassificationParser(Parser):
                 datatype="BYTES", 
                 data=self.inputs,
                 parameters=Parameters(content_type="str")
-            ),
-            *[Input(
+            ), 
+            #Parameters of the model
+            *[Input( 
                 name=key,
                 shape=[-1],
                 datatype="BYTES",
@@ -110,7 +134,6 @@ class ZeroShotClassificationParser(Parser):
             ],   
             parameters=Parameters(content_type="hs_json") 
         )
-
 
 PARSE_DICT = {
     "object-detection" : ObjectDetectionParser,
