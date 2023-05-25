@@ -26,13 +26,16 @@ async def predict(request: HuggingFacePredictRequest):
 
     # Send Seldon v2 Request to Seldon v2 Server & recive Seldonv2 Response
     async with httpx.AsyncClient() as client:
-        response = await client.post(model_endpoint, data=seldon_request.json())
-        response.raise_for_status()
+        
+        response = await client.post(model_endpoint, 
+                                data=seldon_request.json(),
+                                timeout=60)
         if response.status_code == 200:
             response = Seldonv2InferenceResponse(
                     **response.json()
                 )
-        print(response)   
-        return response.outputs[0].data
-    
+            return response.outputs[0].data
+        elif response.status_code == 500:
+            print("Error:", response.text)
+        
 
