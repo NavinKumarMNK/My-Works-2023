@@ -14,7 +14,7 @@ TASK_TO_URL = {
 
 class TestTranslator(unittest.TestCase):
     URL = None
-
+  
     def test_text_generation(self):
         """Test text-generation
         Expected Output:
@@ -48,7 +48,7 @@ class TestTranslator(unittest.TestCase):
             self.assertIn("generated_text", item)
 
     '''
-    def test_token_classification(self):
+    def test_token_classification(self): 
         """Test token-classification
         Expected Output:
         [
@@ -70,7 +70,8 @@ class TestTranslator(unittest.TestCase):
         self.assertGreater(len(output), 0)
         for item in output:
             self.assertIn("entity", item)
-
+  
+  
     def test_zero_shot_classification(self):
         """Test zero-shot-classification
         Expected Output:
@@ -99,6 +100,7 @@ class TestTranslator(unittest.TestCase):
         self.assertIn('scores', output[0])
         self.assertEqual(len(output[0]['scores']), 4)
 
+  
     def test_object_detection_with_url(self):
         """Test object-detection with URL
         Expected Output:
@@ -127,6 +129,7 @@ class TestTranslator(unittest.TestCase):
         self.assertIn('box', output[0][0])
         self.assertEqual(len(output[0][0]['box']), 4)
 
+  
     def test_object_detection_as_bytes(self):
         """Test object-detection with Image bytes
         Expected Output:
@@ -159,7 +162,6 @@ class TestTranslator(unittest.TestCase):
         self.assertIn('box', output[0][0])
         self.assertEqual(len(output[0][0]['box']), 4)
     '''
-
 if __name__ == '__main__':
     TestTranslator.URL = sys.argv.pop()
     unittest.main()

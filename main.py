@@ -2,11 +2,9 @@ import json
 import httpx
 from fastapi import FastAPI
 from typing import Dict, Any, Optional, Tuple
-from api.seldon import Seldonv2Inference, HuggingFaceSeldonParser
-from api.types import HuggingFacePredictRequest
-import pprint 
+from api.seldon import  HuggingFaceSeldonParser
+from api.types import HuggingFacePredictRequest, Seldonv2InferenceRequest, Seldonv2InferenceResponse
 
-pprint = pprint.pprint
 app = FastAPI()
 
 @app.post(path="/predict")
@@ -22,14 +20,19 @@ async def predict(request: HuggingFacePredictRequest):
     '''
 
     # Convert Hugging Face Request to Seldon v2 Request
-    seldon_request: Seldonv2Inference
+    seldon_request: Seldonv2InferenceRequest
     model_endpoint: str
     (seldon_request, model_endpoint) = HuggingFaceSeldonParser(request).parsev2()
-    pprint(seldon_request.json())
 
-    # Send Seldon v2 Request to Seldon v2 Server
+    # Send Seldon v2 Request to Seldon v2 Server & recive Seldonv2 Response
     async with httpx.AsyncClient() as client:
         response = await client.post(model_endpoint, data=seldon_request.json())
         response.raise_for_status()
-        return response.json()
+        if response.status_code == 200:
+            response = Seldonv2InferenceResponse(
+                    **response.json()
+                )
+        print(response)   
+        return response.outputs[0].data
     
+
