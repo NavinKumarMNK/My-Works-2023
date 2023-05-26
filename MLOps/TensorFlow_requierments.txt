@@ -1,4 +1,5 @@
 mlflow
+ray
 scikit-learn
 opencv-python-headless
 matplotlib

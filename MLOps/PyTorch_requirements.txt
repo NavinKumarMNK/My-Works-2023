@@ -16,4 +16,6 @@ polars
 watermark
 plotly
 ipywidgets
-
+thop
+pycuda
+pycaret[full]

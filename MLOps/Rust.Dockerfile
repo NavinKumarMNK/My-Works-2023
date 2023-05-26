@@ -1,6 +1,6 @@
-# Path: MLOps/PyTorch.DockerFile
+# Path: MLOps/Rust.Dockerfile
 
-FROM nvcr.io/nvidia/pytorch:23.04-py3
+From rust:latest
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -24,16 +24,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     htop \ 
     && rm -rf /var/lib/apt/lists/*
 
-
-COPY ./PyTorch_requirements.txt requirements.txt
-
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
-
 WORKDIR /workspace
 
-EXPOSE 22
-EXPOSE 8888
 EXPOSE 8080
 EXPOSE 5000
 
