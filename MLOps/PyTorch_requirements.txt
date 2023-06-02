@@ -19,3 +19,5 @@ ipywidgets
 thop
 pycuda
 pycaret[full]
+transformers
+datasets
