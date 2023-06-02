@@ -51,11 +51,10 @@ fn main(){
     io::stdin().read_line(&mut string1);
     io::stdin().read_line(&mut string2);
 
-    let num = Solution::longest_common_substring_dp(&string1, &string2);
+    let num = Solution::longest_common_substring_dp(&string1.trim(), &string2.trim());
     println!("{}", num);
 
     let mut count = 0;
-    let num = Solution::longest_common_substring_rf(&string1, &string2, string1.len() as i32, string2.len() as i32, &mut count);
+    let num = Solution::longest_common_substring_rf(&string1.trim(), &string2.trim(), string1.trim().len() as i32, string2..trim().len() as i32, &mut count);
     println!("{}", num);
-
 }
