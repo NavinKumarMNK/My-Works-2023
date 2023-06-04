@@ -12,9 +12,6 @@ use std::time::Duration;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
-
-
-
 // Modules
 mod megnav;
 use crate::megnav::order_food;
@@ -342,7 +339,7 @@ fn main() {
             self.left = Some(Box::new(node));
             self
         }
-        pub fn right (mut self, node:TreeNode<T>) -> Self {
+        pub fn right(mut self, node:TreeNode<T>) -> Self {
             self.right = Some(Box::new(node));
             self
         }

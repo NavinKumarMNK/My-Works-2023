@@ -1,16 +1,9 @@
 #![allow(unused)]
 
-use std::collections::HashMap;
-use std::io;
-use std::cmp::max;
-use rand;
-
-// multistage graph
+// Robin Karp Algorithm
 struct Solution;
-impl Solution {
+impl Solution {}
 
-}
-
-fn main(){
+fn main() {
     // Test
-} 
+}
