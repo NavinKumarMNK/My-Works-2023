@@ -22,4 +22,3 @@ impl TreeNode {
 type NodeRef = Rc<RefCell<TreeNode>>;
 
 struct Solution;
-
