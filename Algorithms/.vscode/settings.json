@@ -13,5 +13,9 @@
         "./Rust/Cargo.toml",
         "./Rust/Cargo.toml"
     ],
-    "rust-analyzer.showUnlinkedFileNotification": false
+    "rust-analyzer.showUnlinkedFileNotification": false,
+    "files.associations": {
+        "vector": "cpp",
+        "iosfwd": "cpp"
+    }
 }
