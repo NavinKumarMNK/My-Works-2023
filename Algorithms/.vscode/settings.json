@@ -16,6 +16,7 @@
     "rust-analyzer.showUnlinkedFileNotification": false,
     "files.associations": {
         "vector": "cpp",
-        "iosfwd": "cpp"
+        "iosfwd": "cpp",
+        "iostream": "cpp"
     }
 }
