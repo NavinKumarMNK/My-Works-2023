@@ -1,15 +1,15 @@
-// Leet Code  Sort Colors 75
+// LeetCode 775 - Global and Local Inversions
 struct Solution;
 
-
+impl Solution {}
 #[cfg(test)]
-pub mod tests {
+mod tests {
     use super::*;
     #[test]
     fn test_1() {
-        assert_eq!(Solution::max_profit(vec![7,1,5,3,6,4]), 5);
+        let nums = vec![5, 3, 2, 4, 1];
+        assert_eq!(Solution::is_ideal_permutation(nums), false);
     }
-    
 }
 
-fn main () {}
+fn main() {}
