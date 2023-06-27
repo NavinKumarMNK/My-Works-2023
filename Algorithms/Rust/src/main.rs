@@ -1,14 +1,1 @@
-
-struct Solution;
-
-
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-
-}
-
-fn main() {}
+// Radix Tree => Compressed Trie
