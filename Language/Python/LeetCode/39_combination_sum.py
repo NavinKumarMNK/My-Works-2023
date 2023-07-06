@@ -25,8 +25,9 @@ class Solution:
                 return
             elif remain < 0 or i >= len(candidates):
                 return
-            solve(remain, i + 1, comb)
-            solve(remain - candidates[i], i, comb + (candidates[i],))
+            solve(remain, i + 1, comb) # go to next candidate without using current one
+            solve(remain - candidates[i], i, comb + (candidates[i],)) # use current candidate again
 
         solve(target, 0, ())
         return ans
+
