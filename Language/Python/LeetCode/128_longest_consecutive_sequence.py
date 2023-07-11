@@ -19,8 +19,7 @@ class UnionFind:
             parent_1.size += parent_2.size
         return parent_1.size
                 
-        
-        
+                
 class Solution:
     def longestConsecutive(self, nums: List[int]) -> int:
         uf = UnionFind()
