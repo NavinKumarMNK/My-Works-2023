@@ -73,3 +73,36 @@ class Solution:
             prev.next = ListNode(add)
             
         return dummy.next
+
+class Solution:
+    def addTwoNumbers(self, l1: Optional[ListNode], l2: Optional[ListNode]) -> Optional[ListNode]:
+        ret = l3 = None
+        carry = 0
+        while l1 and l2:
+            add = l1.val + l2.val + carry
+            carry = add // 10
+            digit = add - carry*10
+
+            node = ListNode(digit)
+            node.next = None
+
+            if not l3: 
+                ret = l3 = node
+            else: 
+                l3.next = node
+                l3 = l3.next
+            
+            print(l1, l2)
+            if l1.next is None and l2.next is None:
+                if carry == 1:
+                    l1.val = 0
+                    l2.val = 0
+                else:
+                    break
+            
+            if l1.next: l1 = l1.next
+            else: l1.val = 0
+            if l2.next: l2 = l2.next
+            else: l2.val = 0
+
+        return ret 
