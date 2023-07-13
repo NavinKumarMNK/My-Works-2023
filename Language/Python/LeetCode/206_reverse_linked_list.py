@@ -7,22 +7,24 @@ class ListNode:
 
 class Solution:
     def reverseList(self, head: Optional[ListNode]) -> Optional[ListNode]:
-        old = head
-        if head == None:
-            return head
-        temp = head.next
-        if head.next == None:
-            return head
+        prev, curr = None, head
+        while curr:
+            nxt = curr.next
+            curr.next = prev
+            prev = curr
+            curr = nxt
+
+        return prev
+    
+class Solution:
+    def reverseList(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        if not head: return None
+
+        newHead = head
+        if head.next:
+            newHead = self.reverseList(head.next)
+            head.next.next = head
         head.next = None
     
-        while True:   
-            print(f"{head = }")    
-            next_node = temp.next     
-            temp.next = old
-            old = temp
-            temp = next_node
-            if temp == None:
-                break
-        
-        print(old)
-        return old
+        return newHead
+
