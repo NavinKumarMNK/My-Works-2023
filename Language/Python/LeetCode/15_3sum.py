@@ -9,13 +9,13 @@ class Solution:
                 break
             while left < right:
                 if nums[left] + nums[right] + i == 0:
-                    results.add((i, nums[left], nums[right]))  
-                    left+=1
-                    right-=1
-                elif nums[left] + nums[right] + i < 0 :
-                    left+=1
+                    results.add((i, nums[left], nums[right]))
+                    left += 1
+                    right -= 1
+                elif nums[left] + nums[right] + i < 0:
+                    left += 1
                 else:
-                    right-=1
+                    right -= 1
 
         return results
 

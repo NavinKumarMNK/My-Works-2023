@@ -5,7 +5,9 @@ class Solution:
         while left < right:
             h1, h2 = height[left], height[right]
             max_area = max(max_area, min(h1, h2)*(right-left))
-            if h1 < h2: left+=1
-            else: right-=1
+            if h1 < h2:
+                left += 1
+            else:
+                right -= 1
 
         return max_area
