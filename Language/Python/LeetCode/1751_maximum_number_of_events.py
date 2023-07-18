@@ -21,7 +21,7 @@ class Solution:
         n = len(events)
         events.sort()
 
-        @lru_cache(None)
+        @cache
         def dp(end: int, event_index: int, k: int):
             if k == 0 or event_index == n:
                 return 0
