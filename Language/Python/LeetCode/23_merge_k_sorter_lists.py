@@ -1,35 +1,37 @@
 from typing import List, Optional
 import heapq
 # Definition for singly-linked list.
+
+
 class ListNode:
     def __init__(self, val=0, next=None):
         self.val = val
         self.next = next
 
 # Timed Out
+
+
 class Solution:
     def mergeKLists(self, lists: List[Optional[ListNode]]) -> Optional[ListNode]:
         root = ret = None
         # ptrs[i] => head , always in sorted
-        ptrs = [lists[i] for i in range(len(lists))] 
+        ptrs = [lists[i] for i in range(len(lists))]
         queue = []
 
-        
         while True:
             print(ptrs)
             for i in range(len(ptrs)):
                 if ptrs[i]:
                     heapq.heappush(queue, ptrs[i].val)
                     ptrs[i] = ptrs[i].next
-        
+
             if not any(isinstance(item, ListNode) for item in ptrs):
                 break
-            
 
         while queue:
             node = heapq.heappop(queue)
             node = ListNode(node)
-            if not ret: 
+            if not ret:
                 ret = root = node
             else:
                 root.next = node
@@ -46,16 +48,18 @@ class Solution:
         h = []
         head = tail = ListNode(0)
         for i in lists:
-            if i: heapq.heappush(h, i)
+            if i:
+                heapq.heappush(h, i)
         while h:
             node = heapq.heappop(h)
             tail.next = node
             tail = tail.next
-            if node.next: heapq.heappush(h, node.next)
-        return head.next   
+            if node.next:
+                heapq.heappush(h, node.next)
+        return head.next
 
-            
-# merge sort         
+
+# merge sort
 class Solution:
     def mergeKLists(self, lists: List[Optional[ListNode]]) -> Optional[ListNode]:
         if not lists:

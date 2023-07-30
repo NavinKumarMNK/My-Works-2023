@@ -72,3 +72,36 @@ class Solution:
                 left += 1
 
         return ret_string
+
+
+class Solution:
+    def minWindow(self, s: str, t: str) -> str:
+        hashMap = {}
+
+        for char in t:
+            hashMap[char] = hashMap.get(char, 0) + 1
+
+        left = right = 0
+        ret_string = ""
+        required_chars = len(t)
+
+        while right < len(s):
+            if s[right] in hashMap:
+                hashMap[s[right]] -= 1
+                if hashMap[s[right]] >= 0:
+                    required_chars -= 1
+
+            while required_chars == 0:
+                if ret_string == "" or right - left + 1 < len(ret_string):
+                    ret_string = s[left:right + 1]
+
+                if s[left] in hashMap:
+                    hashMap[s[left]] += 1
+                    if hashMap[s[left]] > 0:
+                        required_chars += 1
+
+                left += 1
+
+            right += 1
+
+        return ret_string
