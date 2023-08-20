@@ -1,1 +1,3 @@
-/.hypothesis
+.hypothesis/
+.dvc/
+/data
