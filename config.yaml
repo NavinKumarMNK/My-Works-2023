@@ -1,7 +1,7 @@
 model:
   name: "Mozhi"
   description: "English to Tamil Translator"
-  hyperparameters:
+  parameters:
     dim_model: 512
     d_ff: 2048
     src_vocab_size: 32000
@@ -9,6 +9,6 @@ model:
     num_heads: 8
     num_layers: 6
     dropout: 0.1
-    src_max_len: 512
-    tgt_max_len: 512
+    src_seq_len: 512
+    tgt_seq_len: 512
 

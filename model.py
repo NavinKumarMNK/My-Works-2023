@@ -187,7 +187,7 @@ class Encoder(nn.Module):
     def __init__(
         self,
         dim_model: int,
-        n_blocks: int,
+        num_layers: int,
         dropout: float,
         num_heads: int,
         d_ff: int,
@@ -199,7 +199,7 @@ class Encoder(nn.Module):
                 EncoderBlock(
                     dim_model=dim_model, num_heads=num_heads, dropout=dropout, d_ff=d_ff
                 )
-                for _ in range(n_blocks)
+                for _ in range(num_layers)
             ]
         )
 
@@ -253,21 +253,21 @@ class Decoder(nn.Module):
     def __init__(
         self,
         dim_model: int,
-        n_blocks: int,
+        num_layers: int,
         dropout: float,
         num_heads: int,
         d_ff: int,
     ) -> None:
-        super.__init__()
+        super().__init__()
 
         # module list of n Decoder Blocks
         self.layer_norm = LayerNorm()
         self.decoder_layers = nn.ModuleList(
             modules=[
                 DecoderBlock(
-                    dim_model=dim_model, num_head=num_heads, dropout=dropout, d_ff=d_ff
+                    dim_model=dim_model, num_heads=num_heads, dropout=dropout, d_ff=d_ff
                 )
-                for _ in range(n_blocks)
+                for _ in range(num_layers)
             ]
         )
 
@@ -297,7 +297,7 @@ class Transformer(nn.Module):
     def __init__(
         self,
         dim_model: int,
-        n_blocks: int,
+        num_layers: int,
         dropout: float,
         num_heads: int,
         d_ff: int,
@@ -306,9 +306,9 @@ class Transformer(nn.Module):
         src_vocab_size: int,
         tgt_vocab_size: int,
     ) -> None:
-        super.__init__()
+        super().__init__()
         self.dim_model = dim_model
-        self.n_blocks = n_blocks
+        self.num_layers = num_layers
         self.dropout = dropout
         self.num_heads = num_heads
         self.d_ff = d_ff
@@ -325,24 +325,24 @@ class Transformer(nn.Module):
             dim_model=self.dim_model, vocab_size=self.tgt_vocab_size
         )
 
-        self.src_emb_x = PositionalEncoding(
+        self.src_pos = PositionalEncoding(
             dim_model=self.dim_model, seq_len=self.src_seq_len, dropout=self.dropout
         )
-        self.tgt_emb_y = PositionalEncoding(
+        self.tgt_pos = PositionalEncoding(
             dim_model=self.dim_model, seq_len=self.tgt_seq_len, dropout=self.dropout
         )
 
         # Core Layers
         self.encoder = Encoder(
             dim_model=self.dim_model,
-            n_blocks=self.n_blocks,
+            num_layers=self.num_layers,
             dropout=self.dropout,
             num_heads=self.num_heads,
             d_ff=self.d_ff,
         )
         self.decoder = Decoder(
             dim_model=self.dim_model,
-            n_block=self.n_blocks,
+            num_layers=self.num_layers,
             dropout=self.dropout,
             num_heads=self.num_heads,
             d_ff=self.d_ff,
@@ -353,22 +353,30 @@ class Transformer(nn.Module):
             dim_model=self.dim_model, vocab_size=self.tgt_vocab_size
         )
 
-    """
-        def encode(self, src, src_mask):
-            src = self.
+        for params in self.parameters():
+            if params.dim() > 1:
+                nn.init.xavier_uniform_(params)
 
-        def decode(self, ) :
-            
-    """
+    def encode(self, src, src_mask):
+        src = self.src_emb(src)
+        src = self.src_pos(src)
+        return self.encoder(src, src_mask)
+
+    def decode(self, tgt, encoder_output, src_mask, tgt_mask) :
+        tgt = self.tgt_emb(tgt)
+        tgt = self.tgt_pos(tgt)
+        return self.decoder(tgt, encoder_output, src_mask, tgt_mask)
 
     def project(self, x: torch.Tensor) -> torch.Tensor:
         return self.projection(x)
+    
+    def forward(self, x: torch.Tensor) -> None:
+        pass
 
 
 if __name__ == "__main__":
     with open("config.yaml") as f:
         config = yaml.safe_load(f)
 
-    print(config)
-
-    model = Transformer(dim_model=config["model"]["dim_model"])
+    model = Transformer(**config["model"]["parameters"])    
+    print(model)

@@ -1,7 +1,4 @@
-﻿#NLPC En-Ta Corpus prepared by University of Moratuwa. 
-#Line Count : 8950
-#Version-1.0.3
-Ranaviru Sewa Authority 
+﻿Ranaviru Sewa Authority 
 Annual Report 2011 
 No.301, 4th Floor, 
 T.B.Jayah Mawatha 
