@@ -10,8 +10,7 @@ model:
     num_heads: 8
     num_layers: 6
     dropout: 0.1
-    src_seq_len: 512
-    tgt_seq_len: 512
+    seq_len: 512
 
 tokenizer:
   src:
@@ -26,7 +25,13 @@ train:
   device: 'cuda'
   batch_size: 32
   epochs: 10
-  lr: 0.0001
+  label_smoothing: 0.1
+  optimizer:
+    lr: 0.0001
+    eps: 0.00000000001
   finetune: false
   logging:
     dir: './logs'
+
+inference:
+  device: 'cuda'

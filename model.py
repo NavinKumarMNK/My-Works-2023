@@ -383,10 +383,10 @@ class Transformer(nn.Module):
         src = self.src_pos(src)
         return self.encoder(src, src_mask)
 
-    def decode(self, tgt, encoder_output, src_mask, tgt_mask) :
+    def decode(self, tgt, src_output, src_mask, tgt_mask) :
         tgt = self.tgt_emb(tgt)
         tgt = self.tgt_pos(tgt)
-        return self.decoder(tgt, encoder_output, src_mask, tgt_mask)
+        return self.decoder(tgt, src_output, src_mask, tgt_mask)
 
     def project(self, x: torch.Tensor) -> torch.Tensor:
         return self.projection(x)

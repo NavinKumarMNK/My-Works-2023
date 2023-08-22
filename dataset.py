@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
-import pyaml as yaml
+import yaml
 import pandas as pd
 
 with open("config.yaml") as f:
@@ -45,6 +45,8 @@ class TransformerDataset(Dataset):
         # concatenating sos, eos and pad tokens
         src_input_ids = torch.cat(
             [self.sos_token, src_input_ids, self.eos_token, self.pad_token.repeat(src_pad_len)])
+        label = torch.cat(
+            [tgt_input_ids, self.eos_token, self.pad_token.repeat(tgt_pad_len)])
         tgt_input_ids = torch.cat(
             [self.sos_token, tgt_input_ids, self.pad_token.repeat(tgt_pad_len)])
         
@@ -58,6 +60,7 @@ class TransformerDataset(Dataset):
         return {
             "encoder_input": src_input_ids, # (seq_len,)
             "decoder_input": tgt_input_ids, # (seq_len,)
-            "encoder_mask": attenion_mask, # (seq_len,)
-            "decoder_mask": casual_attention_mask, # (seq_len, seq_len)
+            "encoder_mask": attenion_mask.unsqueeze(0).unsqueeze(0), # (seq_len,)
+            "decoder_mask": casual_attention_mask.unsqueeze(0), # (seq_len, seq_len)
+            "label" : label # (seq_len,)
         }

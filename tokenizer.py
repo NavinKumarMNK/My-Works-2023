@@ -20,13 +20,13 @@ from pathlib import Path
 SPECIAL_TOKENS = ["[UNK]", "[CLS]", "[SEP]", "[PAD]"]
 
 class BPETokenizer:
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, ):
         self.tokenizer = Tokenizer(BPE(unk_token=SPECIAL_TOKENS[0]))        
         self.tokenizer.pre_tokenizer = Whitespace()
-        self.tokenizer_path = Path(self.config['tokenizer_path'].format(lang))
-
-    def train(self, df):
+        
+    def train(self, df, config):
+        self.config = config
+        self.tokenizer_path = Path(self.config['tokenizer_path'])
         trainer = BpeTrainer(special_tokens=SPECIAL_TOKENS)
         with tqdm(total=len(df), desc="Training tokenizer") as pbar:
             def progress_callback(trainer):
@@ -37,12 +37,12 @@ class BPETokenizer:
             ), trainer=trainer)
         self.tokenizer.save(self.tokenizer_path)
 
-    def load(self, ds, lang):
-        if not Path.exists(self.tokenizer_path):
-            raise FileNotFoundError(f'No tokenizer found at {self.tokenizer_path}')
-        self.tokenizer = Tokenizer.from_file(self.tokenizer_path)
+    def load(self, path):
+        if not Path.exists(path):
+            raise FileNotFoundError(f'No tokenizer found at {path}')
+        self.tokenizer = Tokenizer.from_file(path)
 
-    def _get_sentences(self, df: pd.DataFrame, lang: str) -> Generator[str]: 
+    def _get_sentences(self, df: pd.DataFrame, lang: str) -> Generator[str, None, None]: 
         for item in df:
             yield item[lang]
 
