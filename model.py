@@ -54,6 +54,22 @@ class PositionalEncoding(nn.Module):
             x + (self.position_encoding[:, : x.shape[1], :]).requires_grad_(False)
         )
 
+class ConvBlock(nn.Module):
+    def __init__(self, input_size, ):
+        super().__init__()
+        self.block = nn.Sequential(
+            nn.Conv1d(in_channels=input_size,
+                      out_channels=input_size // 2 , 
+                      kernel_size=3),
+            nn.ReLU(),
+            nn.Conv1d(in_channels=input_size//2, 
+                       out_channels=input_size//4, 
+                       kernel_size=3),
+            nn.ReLU(),
+        )
+    
+    def forward(self, x):
+        return self.block(x)
 
 class LayerNorm(nn.Module):
     # Normazalize across Layers => Xj = (xj - uj)/(sigma^2 + e)^(0.5)
@@ -331,6 +347,11 @@ class Transformer(nn.Module):
         self.tgt_pos = PositionalEncoding(
             dim_model=self.dim_model, seq_len=self.tgt_seq_len, dropout=self.dropout
         )
+
+        """
+        # Conv Layer
+        self.conv = ConvBlock(input_size=self.dim_model)
+        """
 
         # Core Layers
         self.encoder = Encoder(

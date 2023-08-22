@@ -1,14 +1,32 @@
 model:
   name: "Mozhi"
   description: "English to Tamil Translator"
+  path: './weights/mozhi.pt'
   parameters:
     dim_model: 512
     d_ff: 2048
-    src_vocab_size: 32000
-    tgt_vocab_size: 32000
+    src_vocab_size: -1
+    tgt_vocab_size: -1
     num_heads: 8
     num_layers: 6
     dropout: 0.1
     src_seq_len: 512
     tgt_seq_len: 512
 
+tokenizer:
+  src:
+    tokenizer_path: './data/tokenizer_en.json'
+    lang: 'en'
+  tgt: 
+    tokenizer_path: './data/tokenizer_ta.json'
+    lang: 'ta'
+  
+train:
+  dataset: './data/dataset.csv'
+  device: 'cuda'
+  batch_size: 32
+  epochs: 10
+  lr: 0.0001
+  finetune: false
+  logging:
+    dir: './logs'
