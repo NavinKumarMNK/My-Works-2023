@@ -21,3 +21,5 @@ pycuda
 pycaret[full]
 transformers
 datasets
+modin
+
