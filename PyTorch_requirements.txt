@@ -3,7 +3,7 @@ wandb
 ray[all]
 mlflow
 scikit-learn
-opencv-python-headless
+opencv-python-headless==4.8.0.74
 matplotlib
 fastapi
 lightgbm

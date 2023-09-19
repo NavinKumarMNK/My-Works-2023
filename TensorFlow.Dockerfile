@@ -25,7 +25,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY ./TensorFlow_requirements.txt requirements.txt
 
 RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
 
 WORKDIR /workspace
 
