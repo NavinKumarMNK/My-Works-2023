@@ -4,21 +4,21 @@ import base64
 import os
 from kserve import InferRequest, InferInput, InferenceServerClient, InferResponse
 
-# Create the parser
 parser = argparse.ArgumentParser(description='Process some integers.')
 
-# Add the arguments
-parser.add_argument('payload', metavar='payload', type=str, help='input json file path')
+parser.add_argument('--payload', type=str, help='input json file path')
+parser.add_argument('--host', type=str, help='Ip address of the gRPC server')
+parser.add_argument('--port', type=str, help='Port of the gRPC server')
 
-# Parse the arguments
 args = parser.parse_args()
 
+port = args.port
+host = args.host
 client = InferenceServerClient(
-    url=os.environ.get("INGRESS_HOST", "172.17.0.3")+":"+os.environ.get("INGRESS_PORT", "8081"),
+    url=os.environ.get("INGRESS_HOST", host)+":"+os.environ.get("INGRESS_PORT", port),
     channel_args=(('grpc.ssl_target_name_override', os.environ.get("SERVICE_HOSTNAME", "")),)
 )
 
-# Load the JSON file from the path given in command line
 with open(args.payload) as json_file:
     data = json.load(json_file)
 

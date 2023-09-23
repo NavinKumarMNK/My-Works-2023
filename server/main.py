@@ -36,17 +36,18 @@ class ModelServe(Model):
             
             
             df = df.sort_values(by=['gps_fix_at'])  
-            
+        
             if df is None or df.empty:
                 return None
 
             # time difference calc
             df['time_in_out_diff'] = (df['server_upload_at'] - df['gps_fix_at']).dt.total_seconds()
-            df['time_gps_fix_shift'] = df['gps_fix_at'].diff().dt.total_seconds()    
+            df['time_gps_fix_shift'] = df['gps_fix_at'].diff().dt.total_seconds() / 86400  
             df['time_gps_fix_shift'] = df['time_gps_fix_shift'].fillna(0)
             df['gps_first_server_last_diff'] = (df['server_upload_at'].iloc[-1] - df['gps_fix_at'].iloc[0]).days  
             
             # count location_provider
+            df = df.replace({'location_provider': {'fused': 0, 'gps': 1, 'network': 2, 'local_database': 3}})
             location_provider_count = dict(df['location_provider'].value_counts())
             df['location_provider_count_fused'] = location_provider_count.get(0, 0)
             df['location_provider_count_gps'] = location_provider_count.get(1, 0)
@@ -64,7 +65,7 @@ class ModelServe(Model):
             df.drop(columns=["gps_fix_at", "server_upload_at"], inplace=True)
             return df
 
-        df = df.groupby('user_id').apply(feature_extraction).reset_index(drop=True) 
+        df = df.groupby('user_id').apply(feature_extraction).reset_index(drop=True)
         
         def aggregate_dataframe(df):
             # Handle NaN values
@@ -76,19 +77,32 @@ class ModelServe(Model):
             def min_(x):
                 return np.min(x)
             def std_(x):
-                return np.std(x) if len(x) > 1 else 0
+                return np.std(x) if len(x) > 1 else np.NaN
             def mean_(x):
                 return np.mean(x)
             def _(x):
                 return int(np.mean(x))
+            def quantile_01_(x):
+                return np.quantile(x, 0.1)
+            def quantile_03_(x):
+                return np.quantile(x, 0.3)
+            def quantile_05_(x):
+                return np.quantile(x, 0.5)
+            def quantile_07_(x):
+                return np.quantile(x, 0.7)
+            def quantile_09_(x):
+                return np.quantile(x, 0.9)
+
 
             aggregations = {
-                'time_in_out_diff': [max_, min_, std_, mean_],
-                'time_gps_fix_shift': [max_, std_, mean_],
+                'time_in_out_diff': [max_, min_, std_, mean_, quantile_01_, quantile_03_, quantile_05_, quantile_07_, quantile_09_],
+                'time_gps_fix_shift': [max_, std_, mean_,  quantile_01_, quantile_03_, quantile_05_, quantile_07_, quantile_09_],
                 'longitude': [std_],
                 'latitude': [std_],
-                'altitude': [mean_, std_],
-                'bearing': [mean_, std_],
+                'altitude': [mean_, std_,  quantile_01_, quantile_03_, quantile_05_, quantile_07_, quantile_09_],
+                'bearing': [mean_, std_,  quantile_01_, quantile_03_, quantile_05_, quantile_07_, quantile_09_],
+                'accuracy': [mean_, std_,  quantile_01_, quantile_03_, quantile_05_, quantile_07_, quantile_09_],
+                'gps_first_server_last_diff': [_],
                 'location_provider_count_fused': [_],
                 'location_provider_count_gps': [_],
                 'location_provider_count_network': [_],
@@ -99,7 +113,7 @@ class ModelServe(Model):
 
             grouped = df.groupby('user_id')
             df_agg = grouped.agg(aggregations).reset_index()
-
+            
             # Count occurrences of each cluster for each user_id
             for i in range(24):
                 df_agg[f'cluster_{i}_count'] = df.groupby('user_id')['cluster'].apply(lambda x: (x == i).sum()).values
@@ -110,7 +124,7 @@ class ModelServe(Model):
             return df_agg
 
         df_agg = aggregate_dataframe(df)
-
+        df_agg.dropna()
         
         return df_agg
             

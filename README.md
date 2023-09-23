@@ -29,14 +29,20 @@ docker build -t credibility-prediction .
 
 ## Run Server
 ```bash
-docker run -ePORT=8081 -p8081:8081 credibility-prediction
+docker run -p 8080:8080 -p 8081:8081 credibility-prediction
+```
+
+## Server on Host without docker
+```bash
+cd server
+python3 main.py
 ```
 
 ## Request GRPC
 - Save your Request Json file as payload.json
 
 ```bash
-python3 client.py payload.json
+python3 client.py --payload payload.json --host docker-container-ip --port docker-container-port
 ```
 
 ## Description
