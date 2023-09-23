@@ -14,7 +14,7 @@ parser.add_argument('payload', metavar='payload', type=str, help='input json fil
 args = parser.parse_args()
 
 client = InferenceServerClient(
-    url=os.environ.get("INGRESS_HOST", "localhost")+":"+os.environ.get("INGRESS_PORT", "8081"),
+    url=os.environ.get("INGRESS_HOST", "172.17.0.3")+":"+os.environ.get("INGRESS_PORT", "8081"),
     channel_args=(('grpc.ssl_target_name_override', os.environ.get("SERVICE_HOSTNAME", "")),)
 )
 

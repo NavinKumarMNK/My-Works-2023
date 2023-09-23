@@ -1,20 +1,17 @@
-# Use the kserve/sklearnserver base image
-FROM kserve/sklearnserver:latest AS kserve-inference
+FROM python:3.8-slim-bullseye
+ARG DEBIAN_FRONTEND=noninteractive
 
-# Set the working directory
+RUN apt-get update && apt-get install -y --no-install-recommends 
+RUN apt-get update && apt-get install -y libgomp1
+
 WORKDIR /app
 
-# Copy your scikit-learn model file (replace with the actual path)
-COPY your_model.pkl /app/your_model.pkl
+COPY ./server/ /app/
 
-# Copy your server.py file (replace with the actual path)
-COPY server.py /app/server.py
+EXPOSE 8080
+EXPOSE 8081
 
-# Install any additional dependencies if needed
-# RUN pip install some-package
+WORKDIR /app
 
-# Expose the custom gRPC port you defined in server.py (e.g., 6000)
-EXPOSE 6000
-
-# Set the entry point to start the gRPC server
-CMD ["python", "server.py"]
+RUN pip3 install -r requirements.txt
+CMD while true; do python3 main.py; done
