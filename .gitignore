@@ -1,4 +1,11 @@
+# Environment
 .hypothesis
 .env
 .vscode
-data
+
+# DVC files
+.dvc/
+.dvcignore
+
+# DVC data directory
+data/
