@@ -5,8 +5,6 @@ from typing import Dict, Tuple
 from abc import ABC, abstractmethod
 from tqdm import tqdm
 
-__DEVICE__ = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
 class PPOMemory:
     def __init__(self, batch_size: int):
         self.states = []  # stores states
@@ -26,12 +24,12 @@ class PPOMemory:
         batches = [indices[i:i+self.batch_size] for i in batch_start]  # batches of indices
         
         return {
-            "states": np.array(self.states),
-            "actions": np.array(self.actions),
-            "probs": np.array(self.probs),
-            "vals": np.array(self.vals),
-            "rewards": np.array(self.rewards),
-            "dones": np.array(self.dones),
+            "states": torch.tensor(self.states, dtype=torch.float),
+            "actions": torch.tensor(self.actions),
+            "probs": torch.tensor(self.probs),
+            "vals": torch.tensor(self.vals),
+            "rewards": torch.tensor(self.rewards),
+            "dones": torch.tensor(self.dones),
             "batches": batches
         }
     
@@ -68,7 +66,7 @@ class BaseNetwork(ABC, torch.nn.Module):
             self.parameters(), lr=alpha, eps=1e-5
         )
         
-        self.to(__DEVICE__)  # for gpu computation
+        self  # for gpu computation
 
     @abstractmethod
     def forward(self, state: torch.Tensor):
@@ -82,9 +80,9 @@ class BaseNetwork(ABC, torch.nn.Module):
 
 
 class ActorNetwork(BaseNetwork):
-    def __init__(self, n_actions, input_dim:int, alpha:float, ckpt_dir:str='tmp/ppo'):
+    def __init__(self, n_actions, input_dim, alpha:float, ckpt_dir:str='tmp/ppo'):
         super(ActorNetwork, self).__init__(
-            *input_dim, n_actions, alpha, os.path.join(ckpt_dir, 'actor_torch_ppo')
+            input_dim, n_actions, alpha, os.path.join(ckpt_dir, 'actor_torch_ppo')
         )
         self.network.add_module('Softmax', torch.nn.Softmax(dim=-1))
 
@@ -97,7 +95,7 @@ class ActorNetwork(BaseNetwork):
 class CriticNetwork(BaseNetwork):
     def __init__(self, input_dim, alpha:float, ckpt_dir:str='tmp/ppo'):
         super(CriticNetwork, self).__init__(
-            *input_dim, 1, alpha, os.path.join(ckpt_dir, 'critic_torch_ppo')
+            input_dim, 1, alpha, os.path.join(ckpt_dir, 'critic_torch_ppo')
         )
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:
@@ -105,7 +103,7 @@ class CriticNetwork(BaseNetwork):
         return value
 
 class Agent:
-    def __init__(self, n_actions, gamma=0.99, alpha=3e-4, 
+    def __init__(self, n_actions, input_dims, gamma=0.99, alpha=3e-4, 
                  policy_clip=0.2, batch_size=64, N=2048,
                  n_epochs=10, gae_lambda=0.95, entropy_beta=0.01):
         
@@ -114,25 +112,23 @@ class Agent:
             k: locals_[k] for k in locals_ if k != 'self'
         })
         
-        self.actor = ActorNetwork(n_actions, 33, alpha)
-        self.critic = CriticNetwork(33, alpha)
+        self.actor = ActorNetwork(n_actions, input_dims, alpha)
+        self.critic = CriticNetwork(input_dims, alpha)
         self.memory = PPOMemory(batch_size)
         
     def remember(self, state, action, probs, vals, reward, done):
         self.memory.store_memory(state, action, probs, vals, reward, done)
    
     def save_models(self):
-        print('... saving models ...')
         self.actor.save_checkpoint()
         self.critic.save_checkpoint()
     
     def load_models(self):
-        print('... loading models ...')
         self.actor.load_checkpoint()
         self.critic.load_checkpoint()
         
     def choose_action(self, observation) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        state = torch.Tensor([observation], dtype=torch.float).to(__DEVICE__)
+        state = torch.tensor([observation], dtype=torch.float)
         
         dist = self.actor(state)
         value = self.critic(state)
@@ -145,7 +141,7 @@ class Agent:
         return (action, probs, value)
     
     def learn(self):
-        for _ in tqdm(range(self.n_epochs)):
+        for _ in range(self.n_epochs):
             (states, actions, old_probs, 
              values, rewards, dones, batches) = self.memory.generate_batches().values()
             
@@ -164,20 +160,20 @@ class Agent:
                                      * (1-int(dones[k])) - values[k])
                     discount *= self.gamma*self.gae_lambda
                 advantage[t] = a_t
-            advantage = torch.Tensor(advantage).to(__DEVICE__)
+            advantage = torch.tensor(advantage)
             
-            values = torch.Tensor(values).to(__DEVICE__)
+            values = torch.tensor(values)
             for batch in batches:
-                states = torch.Tensor(states[batch], device=torch.float).to(__DEVICE__)
-                old_probs = torch.Tensor(old_probs[batch], device=torch.float).to(__DEVICE__)
-                actions = torch.Tensor(actions[batch], device=torch.float).to(__DEVICE__)
+                _states = states[batch]
+                _old_probs = old_probs[batch]
+                _actions = actions[batch]
                 
-                dist: torch.distributions.Categorical = self.actor(states)
-                critic_value = self.critic(states)
+                dist: torch.distributions.Categorical = self.actor(_states)
+                critic_value = self.critic(_states)
                 
                 critic_value = torch.squeeze(critic_value) 
-                new_probs = dist.log_prob(actions)
-                prob_ratio = (new_probs-old_probs).exp()
+                new_probs = dist.log_prob(_actions)
+                prob_ratio = (new_probs-_old_probs).exp()
                 weighted_probs = advantage[batch] * prob_ratio
                 weighted_clipped_probs = torch.clamp(
                     prob_ratio, 1-self.policy_clip, 1+self.policy_clip
