@@ -13,13 +13,43 @@ model:
     seq_len: 512
 
 tokenizer:
+  data_path: ./data/dataset_large.parquet
   src:
+    special_tokens:
+      bos_token: "<s>"
+      eos_token: "</s>"
+      sep_token: "</s>"
+      cls_token: "<s>"
+      pad_token: "<pad>"
+      mask_token: "<mask>"
+      unk_token: "<unk>"
     tokenizer_path: './data/tokenizer_en.json'
+    vocab_size: 50265
+    min_frequency: 2
     lang: 'en'
-  tgt: 
+  tgt:
+    special_tokens:
+      bos_token: "<s>"
+      eos_token: "</s>"
+      sep_token: "</s>"
+      cls_token: "<s>"
+      pad_token: "<pad>"
+      mask_token: "<mask>"
+      unk_token: "<unk>"
     tokenizer_path: './data/tokenizer_ta.json'
+    vocab_size: 50265
+    min_frequency: 2
     lang: 'ta'
-  
+
+data:
+  src: 'en'
+  tgt: 'ta'
+  data_dir: './data'
+  src_to_tgt: # src : tgt
+    'train1.en.txt': 'train1.ta.txt'
+    'train2.en.txt': 'train2.ta.txt'
+    'train3.en.txt': 'train3.ta.txt'
+
 train:
   dataset: './data/dataset.csv'
   device: 'cuda'

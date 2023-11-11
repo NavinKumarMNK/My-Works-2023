@@ -101,3 +101,5 @@ if __name__ == '__main__':
     for token in translated_text:
         print(token)
 
+    import transformer_engine
+    

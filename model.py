@@ -12,7 +12,6 @@ torch.manual_seed(seed=SEED)
 torch.cuda.manual_seed_all(seed=SEED)
 torch.backends.cudnn.deterministic = True
 
-
 class InputEmbeddings(nn.Module):
     # stores embedding of the tokens
     def __init__(self, dim_model: int, vocab_size: int):
