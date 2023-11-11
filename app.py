@@ -1,7 +1,7 @@
 import gradio as gr
 import torch
 
-from inference import Infer
+from scripts.inference import Infer
 
 demo = gr.Interface(
     fn=Infer().translate,

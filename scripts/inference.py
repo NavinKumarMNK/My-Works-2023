@@ -9,9 +9,9 @@ import warnings
 warnings.filterwarnings("ignore")
 
 from sklearn.model_selection import train_test_split
-from model import Transformer
+from scripts.model import Transformer
 from tokenizer import BPETokenizer
-from dataset import TransformerDataset
+from scripts.dataset import TransformerDataset
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm

@@ -23,7 +23,7 @@ tokenizer:
       pad_token: "<pad>"
       mask_token: "<mask>"
       unk_token: "<unk>"
-    tokenizer_path: './data/tokenizer_en.json'
+    tokenizer_path: './weights/tokenizer_en.json'
     vocab_size: 50265
     min_frequency: 2
     lang: 'en'
@@ -36,7 +36,7 @@ tokenizer:
       pad_token: "<pad>"
       mask_token: "<mask>"
       unk_token: "<unk>"
-    tokenizer_path: './data/tokenizer_ta.json'
+    tokenizer_path: './weights/tokenizer_ta.json'
     vocab_size: 50265
     min_frequency: 2
     lang: 'ta'
