@@ -8,14 +8,12 @@ import pandas as pd
 import warnings
 warnings.filterwarnings("ignore")
 
-from sklearn.model_selection import train_test_split
-from .scripts.model import Transformer
-from .tokenizer import BPETokenizer
-from .scripts.dataset import TransformerDataset
-from torch.utils.data import DataLoader
+from scripts.model import Transformer
+from scripts.tokenizer import BPETokenizer
+from scripts.dataset import Seq2SeqDataLoader
+from scripts.preprocessing import load_corpus
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-
 
 SEED = 42
 torch.manual_seed(seed=SEED)
@@ -26,78 +24,89 @@ if __name__ == '__main__':
     with open("config.yaml") as f:
         config = yaml.safe_load(f)
     
-    dataset = pd.read_csv(config['dataset_path'])
-
-
-    tokenizer_src = BPETokenizer()
-    tokenizer_tgt = BPETokenizer()
-
-    tokenizer_src.train(dataset, config['tokenizer']['src'])
-    tokenizer_tgt.train(dataset, config['tokenizer']['tgt'])
+    train_config = config['train']
+    model_config = config['model']
+    token_config = config['tokenizer']
+    data_config = config['data']
     
-    # Inspecting Tokenizers
-    print(f"Vocab size of source language: {tokenizer_src.vocab_size}")
-    print(f"Vocab size of target language: {tokenizer_tgt.vocab_size}")
-    config['model']['parameters']['src_vocab_size'] = tokenizer_src.vocab_size
-    config['model']['parameters']['tgt_vocab_size'] = tokenizer_tgt.vocab_size
+    '''
+    # Preprocessing Dataset
+    corpus = load_corpus(data_config)
+    corpus.to_parquet(data_config['dataset_path'])
+    print("Corpus Preprocessed and saved to ", data_config['dataset_path'])
+    
+    # Tokenizer setup
+    # df = pd.read_parquet(token_config['dataset_path'])
+    src_bool = True
+    for items in (token_config['src'], token_config['tgt']):
+        _df = corpus[items['lang']]
 
-    # modify the config.yaml file with the vocab size
-    with open("config.yaml", "w") as f:
-        yaml.dump(config, f)
+        bpe_tokenizer = BPETokenizer(items)
+        bpe_tokenizer.train(_df)
+        print("Size of vocabulary:", bpe_tokenizer.tokenizer.get_vocab_size())
+        if src_bool:
+            tokenizer_src = bpe_tokenizer.tokenizer
+            src_bool = False
+        else:
+            tokenizer_tgt = bpe_tokenizer.tokenizer
 
-    # customize manually for better and robust training
-    train_dataset, val_dataset = train_test_split(
-        dataset, test_size=0.2, random_state=SEED
+    print("Successfully trained Tokenizers")
+
+    '''
+    from tokenizers import Tokenizer
+    tokenizer_src = Tokenizer.from_file(token_config['src']['tokenizer_path'])
+    tokenizer_tgt = Tokenizer.from_file(token_config['tgt']['tokenizer_path'])
+    
+
+    # Dataset setup
+    dataset = Seq2SeqDataLoader(
+        df=pd.read_parquet(train_config['dataset_path']),
+        tokenizer_src=train_config['tokenizer']['src']['path'],
+        tokenizer_tgt=train_config['tokenizer']['tgt']['path'],
+        src_lang=train_config['tokenizer']['src']['lang'],
+        tgt_lang=train_config['tokenizer']['tgt']['lang'],
+        src_seq_len=train_config['tokenizer']['src']['seq_len'],
+        tgt_seq_len=train_config['tokenizer']['tgt']['seq_len'],
+        batch_size=train_config['batch_size'],
+        num_workers=train_config['num_workers'],
+        split_size=train_config['split_size']
     )
-
-    train_dataset = TransformerDataset(
-        df=dataset, 
-        tokenizer_src=tokenizer_src,
-        tokenizer_tgt=tokenizer_tgt, 
-        src_lang=config['tokenizer']['src']['lang'],
-        tgt_lang=config['tokenizer']['tgt']['lang'],
-        seq_len=config['model']['parmaters']['seq_len'])
+    dataset.setup()
+    print("Dataset setup complete")
     
-    val_dataset = TransformerDataset(
-        df=dataset, 
-        tokenizer_src=tokenizer_src,
-        tokenizer_tgt=tokenizer_tgt, 
-        src_lang=config['tokenizer']['src']['lang'],
-        tgt_lang=config['tokenizer']['tgt']['lang'],
-        seq_len=config['model']['parmaters']['seq_len'])
-    
-    train_loader = DataLoader(train_dataset, batch_size=config['train']['batch_size'], shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=config['train']['batch_size'], shuffle=False)
+    train_loader = dataset.train_dataloader()
+    val_loader = dataset.val_dataloader()
 
     # device settings for training
-    device = config['train']['device'] 
+    device = train_config['device'] 
     if device == 'cuda':
         if not torch.cuda.is_available():
             print("Device set to cuda but cuda is not available. Using CPU")
             device = 'cpu'
     
-
-    model = Transformer(**config["model"]["parameters"])
+    # model setup
+    model = Transformer(**model_config["parameters"])
     optimzer = torch.optim.Adam(
-        params=model.parameters(), **config['train']['optimizer'])
+        params=model.parameters(), **train_config['optimizer'])
+    
     # label smooting = True;
     loss_fn = nn.CrossEntropyLoss(
-        ignore_index=tokenizer_tgt.token_to_id("[PAD]"),
-        label_smoothing=config['train']['label_smoothing'],
+        ignore_index=1, # ignore padding token
+        label_smoothing=train_config['label_smoothing'],
     ).to(device)
     
     print(model)
 
     # tensorboard logging
-    writer = SummaryWriter(log_dir=config['train']['log']['dir'])
+    writer = SummaryWriter(log_dir=train_config['logging']['dir'])
     
     model.to(device)
     print(f"Training on: {device}")
 
-    if config['train']['fine_tune']:
-        model.load_state_dict(torch.load(config['model']['path']))
+    if train_config['fine_tune']:
+        model.load_state_dict(torch.load(model_config['path']))
             
-    for epoch in tqdm(range(config['train']['epochs']), desc="Epochs"):
+    for epoch in tqdm(range(train_config['epochs']), desc="Epochs"):
         # training loop
         model.train()
         for batch in tqdm(train_loader, desc=f"Training epoch {epoch:02d}"):
@@ -136,7 +145,7 @@ if __name__ == '__main__':
         model.eval()
         with torch.no_grad():
             for batch in tqdm(val_loader, desc=f"Validation epoch {epoch:02d}"):
-                if batch.shape[0] != config['train']['batch_size']:
+                if batch.shape[0] != train_config['batch_size']:
                     continue
 
                 encoder_input = batch['encoder_input'].to(device) # (batch_size, seq_len)
@@ -167,3 +176,4 @@ if __name__ == '__main__':
    
         # Save model
         torch.save(model.state_dict(), config['model']['path']+f"epoch_{epoch}.pt")
+        

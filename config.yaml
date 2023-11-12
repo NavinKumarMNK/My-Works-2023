@@ -14,7 +14,7 @@ model:
     tgt_max_seq_len: 256
 
 tokenizer:
-  data_path: /workspace/Mozhi/data/dataset_large.parquet
+  dataset_path: /workspace/Mozhi/data/dataset_large.parquet
   src:
     special_tokens:
       bos_token: "<s>"
@@ -46,21 +46,34 @@ data:
   src: 'en'
   tgt: 'ta'
   data_dir: '/workspace/Mozhi/data'
+  dataset_path: '/workspace/Mozhi/data/dataset_large.parquet'
   src_to_tgt: # src : tgt
     'train1.en.txt': 'train1.ta.txt'
     'train2.en.txt': 'train2.ta.txt'
     'train3.en.txt': 'train3.ta.txt'
 
 train:
-  dataset: '/workspace/Mozhi/data/dataset.csv'
+  dataset_path: '/workspace/Mozhi/data/dataset_large.parquet'
+  tokenizer:
+    src: 
+      path: '/workspace/Mozhi/weights/tokenizer_en.json'
+      lang: 'en'
+      seq_len: 256
+      
+    tgt: 
+      path: '/workspace/Mozhi/weights/tokenizer_ta.json'
+      lang: 'ta'
+      seq_len: 256
   device: 'cuda'
   batch_size: 32
+  num_workers: 4
+  split_size: 0.1
   epochs: 10
   label_smoothing: 0.1
   optimizer:
     lr: 0.0001
     eps: 0.00000000001
-  finetune: false
+  fine_tune: false
   logging:
     dir: '/workspace/Mozhi/logs'
 

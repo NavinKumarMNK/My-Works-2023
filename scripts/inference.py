@@ -10,7 +10,7 @@ warnings.filterwarnings("ignore")
 
 from sklearn.model_selection import train_test_split
 from scripts.model import Transformer
-from tokenizer import BPETokenizer
+from scripts.tokenizer import BPETokenizer
 from scripts.dataset import TransformerDataset
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter

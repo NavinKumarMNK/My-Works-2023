@@ -20,15 +20,15 @@ class BPETokenizer:
             self.config['special_tokens']['pad_token']: 1,
             self.config['special_tokens']['eos_token']: 2,
             self.config['special_tokens']['unk_token']: 3,
-            self.config['special_tokens']['mask_token']: 50264,
+            self.config['special_tokens']['mask_token']: self.config['vocab_size'] - 1,
         }
 
     def _get_language_specific_components(self):
-        if config['lang'] == 'ta':
+        if self.config['lang'] == 'ta':
             normalizer = normalizers.NFKC()
             pre_tokenizer = pre_tokenizers.Metaspace()
             decoder = decoders.Metaspace()
-        elif config['lang'] == 'en':
+        elif self.config['lang'] == 'en':
             normalizer = normalizers.Sequence([
                 normalizers.NFKC(),
                 normalizers.Lowercase()
@@ -100,7 +100,7 @@ if __name__ == '__main__':
         config = yaml.load(f, Loader=yaml.FullLoader)
 
     config = config['tokenizer']
-    df = pd.read_parquet(config['data_path'])
+    df = pd.read_parquet(config['dataset_path'])
 
     for items in (config['src'], config['tgt']):
         _df = df[items['lang']]
