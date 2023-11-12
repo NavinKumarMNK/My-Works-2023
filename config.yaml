@@ -1,19 +1,20 @@
 model:
   name: "Mozhi"
   description: "English to Tamil Translator"
-  path: './weights/mozhi.pt'
+  path: '/workspace/Mozhi/weights/mozhi.pt'
   parameters:
-    dim_model: 512
-    d_ff: 2048
-    src_vocab_size: -1
-    tgt_vocab_size: -1
-    num_heads: 8
+    dim_model: 256
+    d_ff: 1024
+    src_vocab_size: 10000
+    tgt_vocab_size: 10000
+    num_heads: 4
     num_layers: 6
     dropout: 0.1
-    seq_len: 512
+    src_max_seq_len: 256
+    tgt_max_seq_len: 256
 
 tokenizer:
-  data_path: ./data/dataset_large.parquet
+  data_path: /workspace/Mozhi/data/dataset_large.parquet
   src:
     special_tokens:
       bos_token: "<s>"
@@ -23,8 +24,8 @@ tokenizer:
       pad_token: "<pad>"
       mask_token: "<mask>"
       unk_token: "<unk>"
-    tokenizer_path: './weights/tokenizer_en.json'
-    vocab_size: 50265
+    tokenizer_path: '/workspace/Mozhi/weights/tokenizer_en.json'
+    vocab_size: 10000
     min_frequency: 2
     lang: 'en'
   tgt:
@@ -36,22 +37,22 @@ tokenizer:
       pad_token: "<pad>"
       mask_token: "<mask>"
       unk_token: "<unk>"
-    tokenizer_path: './weights/tokenizer_ta.json'
-    vocab_size: 50265
+    tokenizer_path: '/workspace/Mozhi/weights/tokenizer_ta.json'
+    vocab_size: 10000
     min_frequency: 2
     lang: 'ta'
 
 data:
   src: 'en'
   tgt: 'ta'
-  data_dir: './data'
+  data_dir: '/workspace/Mozhi/data'
   src_to_tgt: # src : tgt
     'train1.en.txt': 'train1.ta.txt'
     'train2.en.txt': 'train2.ta.txt'
     'train3.en.txt': 'train3.ta.txt'
 
 train:
-  dataset: './data/dataset.csv'
+  dataset: '/workspace/Mozhi/data/dataset.csv'
   device: 'cuda'
   batch_size: 32
   epochs: 10
@@ -61,7 +62,7 @@ train:
     eps: 0.00000000001
   finetune: false
   logging:
-    dir: './logs'
+    dir: '/workspace/Mozhi/logs'
 
 inference:
   device: 'cuda'

@@ -23,7 +23,7 @@ class InputEmbeddings(nn.Module):
         )
 
     def forward(self, x: torch.Tensor):
-        return self.embedding * math.sqrt(self.dim_model)
+        return self.embedding(x) * math.sqrt(self.dim_model)
 
 
 class PositionalEncoding(nn.Module):
@@ -196,7 +196,6 @@ class EncoderBlock(nn.Module):
         x_ffn = x_atten + self.ffn(self.norm_ffn(x_atten))
         return x_ffn
 
-
 class Encoder(nn.Module):
     # stacked n EncoderBlocks
     def __init__(
@@ -221,7 +220,7 @@ class Encoder(nn.Module):
     def forward(self, x: torch.Tensor, mask: Optional[torch.Tensor]) -> torch.Tensor:
         for layer in self.encoder_layers:
             x = layer(x, mask)
-        return self.layer_norm(self.x)
+        return self.layer_norm(x)
 
 
 class DecoderBlock(nn.Module):
@@ -296,6 +295,8 @@ class Decoder(nn.Module):
         for layer in self.decoder_layers:
             x = layer(x, encoder_output, src_mask, tgt_mask)
 
+        return self.layer_norm(x)
+
 
 class ProjectionHead(nn.Module):
     # feature vector to vocab
@@ -316,8 +317,8 @@ class Transformer(nn.Module):
         dropout: float,
         num_heads: int,
         d_ff: int,
-        src_seq_len: int,
-        tgt_seq_len: int,
+        src_max_seq_len: int,
+        tgt_max_seq_len: int,
         src_vocab_size: int,
         tgt_vocab_size: int,
     ) -> None:
@@ -327,8 +328,8 @@ class Transformer(nn.Module):
         self.dropout = dropout
         self.num_heads = num_heads
         self.d_ff = d_ff
-        self.src_seq_len = src_seq_len
-        self.tgt_seq_len = tgt_seq_len
+        self.src_max_seq_len = src_max_seq_len
+        self.tgt_max_seq_len = tgt_max_seq_len
         self.src_vocab_size = src_vocab_size
         self.tgt_vocab_size = tgt_vocab_size
 
@@ -341,17 +342,12 @@ class Transformer(nn.Module):
         )
 
         self.src_pos = PositionalEncoding(
-            dim_model=self.dim_model, seq_len=self.src_seq_len, dropout=self.dropout
+            dim_model=self.dim_model, seq_len=self.src_max_seq_len, dropout=self.dropout
         )
         self.tgt_pos = PositionalEncoding(
-            dim_model=self.dim_model, seq_len=self.tgt_seq_len, dropout=self.dropout
+            dim_model=self.dim_model, seq_len=self.tgt_max_seq_len, dropout=self.dropout
         )
-
-        """
-        # Conv Layer
-        self.conv = ConvBlock(input_size=self.dim_model)
-        """
-
+        
         # Core Layers
         self.encoder = Encoder(
             dim_model=self.dim_model,
@@ -382,7 +378,7 @@ class Transformer(nn.Module):
         src = self.src_pos(src)
         return self.encoder(src, src_mask)
 
-    def decode(self, tgt, src_output, src_mask, tgt_mask) :
+    def decode(self, tgt, src_output, src_mask, tgt_mask):
         tgt = self.tgt_emb(tgt)
         tgt = self.tgt_pos(tgt)
         return self.decoder(tgt, src_output, src_mask, tgt_mask)
@@ -390,8 +386,10 @@ class Transformer(nn.Module):
     def project(self, x: torch.Tensor) -> torch.Tensor:
         return self.projection(x)
     
-    def forward(self, x: torch.Tensor) -> None:
-        pass
+    def forward(self, src, tgt, src_mask, tgt_mask):
+        src_output = self.encode(src, src_mask)
+        tgt_output = self.decode(tgt, src_output, src_mask, tgt_mask)
+        return self.project(tgt_output)
 
 
 if __name__ == "__main__":
@@ -400,3 +398,34 @@ if __name__ == "__main__":
 
     model = Transformer(**config["model"]["parameters"])    
     print(model)
+    
+    # calculate no of parameters in encoder, decoder, and embedding layers separately
+    # encoder
+    encoder_params = sum(p.numel() for p in model.encoder.parameters() if p.requires_grad)
+    print(f"Encoder Parameters: {encoder_params:,}")
+    
+    # decoder
+    decoder_params = sum(p.numel() for p in model.decoder.parameters() if p.requires_grad)
+    print(f"Decoder Parameters: {decoder_params:,}")
+    
+    # embedding
+    embedding_params = sum(p.numel() for p in model.src_emb.parameters() if p.requires_grad)
+    print(f"Embedding Parameters: {embedding_params:,}")
+    
+    # embedding target 
+    embedding_params = sum(p.numel() for p in model.tgt_emb.parameters() if p.requires_grad)
+    print(f"Embedding Parameters: {embedding_params:,}")
+    
+    pos_parms = sum(p.numel() for p in model.src_pos.parameters() if p.requires_grad)
+    print(f"Positional Encoding Parameters: {pos_parms:,}")
+    
+    pos_parms = sum(p.numel() for p in model.tgt_pos.parameters() if p.requires_grad)
+    print(f"Positional Encoding Parameters: {pos_parms:,}")
+    
+    
+    # projection
+    projection_params = sum(p.numel() for p in model.projection.parameters() if p.requires_grad)
+    print(f"Projection Parameters: {projection_params:,}")
+    
+    
+    
