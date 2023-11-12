@@ -139,7 +139,7 @@ class MultiHeadAttentionBlock(nn.Module):
         attention_scores = (query @ key.transpose(-2, -1)) / math.sqrt(d_k)
 
         if mask is not None:
-            attention_scores.masked_fill_(mask == 0, -1e9)
+            attention_scores.masked_fill_(mask == 0, -1e4)
         attention_scores = attention_scores.softmax(dim=-1)
 
         if dropout is not None:
@@ -148,21 +148,21 @@ class MultiHeadAttentionBlock(nn.Module):
         return attention_scores @ value
 
     # mask => control attention by blocking interactions between two words
-    def forward(self, q, k, v, mask: Optional[torch.Tensor]):
+    def forward(self, query, key, value, mask: Optional[torch.Tensor]):
         # (batch_size, seq_len, dim_model) -> (batch_size, seq_len, dim_model) ->
         # (batch_size, seq_len, heads, d_k) -> (batch_size, heads, seq_len, d_k) : process across heads
         query = (
-            self.w_q(q)
+            self.w_q(query)
             .view(query.shape[0], query.shape[1], self.num_heads, self.d_k)
             .transpose(1, 2)
         )
         key = (
-            self.w_k(k)
+            self.w_k(key)
             .view(key.shape[0], key.shape[1], self.num_heads, self.d_k)
             .transpose(1, 2)
         )
         value = (
-            self.w_v(v)
+            self.w_v(value)
             .view(value.shape[0], value.shape[1], self.num_heads, self.d_k)
             .transpose(1, 2)
         )

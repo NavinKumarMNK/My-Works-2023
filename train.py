@@ -20,6 +20,61 @@ torch.manual_seed(seed=SEED)
 torch.cuda.manual_seed_all(seed=SEED)
 torch.backends.cudnn.deterministic = True
 
+import lightning as L
+import lightning.pytorch.loggers as logger
+import lightning.pytorch.callbacks as callback
+
+class Seq2SeqModel(L.LightningModule):
+    def __init__(self, model_config, train_config):
+        super().__init__()
+        self.model_config = model_config
+        self.train_config = train_config
+        
+        self.model = Transformer(**self.model_config["parameters"])
+        self.loss_fn = nn.CrossEntropyLoss(
+            ignore_index=1, # ignore padding token
+            # label_smoothing=self.train_config['label_smoothing'],
+        )
+       
+        self.save_hyperparameters()
+
+    def forward(self, src, tgt, src_mask, tgt_mask):
+        return self.model(src=src, tgt=tgt, src_mask=src_mask, tgt_mask=tgt_mask)
+
+    def training_step(self, batch, batch_idx):
+        encoder_input = batch['encoder_input'] # (batch_size, seq_len)
+        decoder_input = batch['decoder_input'] # (batch_size, seq_len)
+        encoder_mask = batch['encoder_mask'] # (batch_size, 1, 1, seq_len)
+        decoder_mask = batch['decoder_mask'] # (batch_size, 1, seq_len, seq_len)
+        label = batch['label'] # (batch_size, seq_len)
+
+        output = self(src=encoder_input, tgt=decoder_input,
+                      src_mask=encoder_mask, tgt_mask=decoder_mask)
+        
+        loss = self.loss_fn(output.view(-1, output.size(-1)), label.view(-1))
+        self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        encoder_input = batch['encoder_input'] # (batch_size, seq_len)
+        decoder_input = batch['decoder_input'] # (batch_size, seq_len)
+        encoder_mask = batch['encoder_mask'] # (batch_size, 1, 1, seq_len)
+        decoder_mask = batch['decoder_mask'] # (batch_size, 1, seq_len, seq_len)
+        label = batch['label'] # (batch_size, seq_len)
+
+        output = self(src=encoder_input, tgt=decoder_input,
+                      src_mask=encoder_mask, tgt_mask=decoder_mask)
+        
+        loss = self.loss_fn(output.view(-1, output.size(-1)), label.view(-1))
+        self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        return loss
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(
+            params=self.parameters(), 
+            **self.train_config['optimizer'])
+        return optimizer
+
 if __name__ == '__main__':
     with open("config.yaml") as f:
         config = yaml.safe_load(f)
@@ -54,8 +109,8 @@ if __name__ == '__main__':
 
     '''
     from tokenizers import Tokenizer
-    tokenizer_src = Tokenizer.from_file(token_config['src']['tokenizer_path'])
-    tokenizer_tgt = Tokenizer.from_file(token_config['tgt']['tokenizer_path'])
+    tokenizer_src: BPETokenizer = Tokenizer.from_file(token_config['src']['tokenizer_path'])
+    tokenizer_tgt: BPETokenizer = Tokenizer.from_file(token_config['tgt']['tokenizer_path'])
     
 
     # Dataset setup
@@ -78,102 +133,43 @@ if __name__ == '__main__':
     val_loader = dataset.val_dataloader()
 
     # device settings for training
-    device = train_config['device'] 
-    if device == 'cuda':
+    if train_config['device'] == 'cuda':
         if not torch.cuda.is_available():
             print("Device set to cuda but cuda is not available. Using CPU")
-            device = 'cpu'
+            train_config['device'] = 'cpu'
     
     # model setup
-    model = Transformer(**model_config["parameters"])
-    optimzer = torch.optim.Adam(
-        params=model.parameters(), **train_config['optimizer'])
-    
-    # label smooting = True;
-    loss_fn = nn.CrossEntropyLoss(
-        ignore_index=1, # ignore padding token
-        label_smoothing=train_config['label_smoothing'],
-    ).to(device)
-    
-    print(model)
-
-    # tensorboard logging
-    writer = SummaryWriter(log_dir=train_config['logging']['dir'])
-    
-    model.to(device)
-    print(f"Training on: {device}")
+    model = Seq2SeqModel(model_config, train_config)
 
     if train_config['fine_tune']:
-        model.load_state_dict(torch.load(model_config['path']))
-            
-    for epoch in tqdm(range(train_config['epochs']), desc="Epochs"):
-        # training loop
-        model.train()
-        for batch in tqdm(train_loader, desc=f"Training epoch {epoch:02d}"):
-            encoder_input = batch['encoder_input'].to(device) # (batch_size, seq_len)
-            decoder_input = batch['decoder_input'].to(device) # (batch_size, seq_len)
-            encoder_mask = batch['encoder_mask'].to(device) # (batch_size, 1, 1, seq_len)
-            decoder_mask = batch['decoder_mask'].to(device) # (batch_size, 1, seq_len, seq_len)
+        model.model = torch.load(train_config['model_path'])
+        print("Loaded model from ", train_config['model_path'])
 
-            # forward pass
-            encoder_output = model.encoder(
-                src=encoder_input, scr_mask=encoder_mask) # (batch_size, seq_len, d_model)
-            decoder_output = model.decoder(
-                tgt=decoder_input, tgt_mask=decoder_mask, 
-                src_output=encoder_output, src_mask=encoder_mask) # (batch_size, seq_len, d_model)
-
-            label = decoder_input[:, 1:].contiguous() # (batch_size, seq_len)
-            output = model.project(decoder_output) # (batch_size, seq_len, tgt_vocab_size)
-
-            # loss calculation
-            loss = loss_fn(output.view(-1, tokenizer_tgt.vocab_size), label.view(-1))
-            writer.add_scalar("Loss/train", loss.item(), epoch)
-            writer.flush()
-
-            # set postfix for tqdm
-            postfix = {
-                "train_loss": loss.item(),
-            }
-            tqdm.set_postfix(postfix, refresh=True)
-            
-            # backward pass
-            loss.backward()
-            optimzer.step()
-            optimzer.zero_grad()
-        
-        # validation loop
-        model.eval()
-        with torch.no_grad():
-            for batch in tqdm(val_loader, desc=f"Validation epoch {epoch:02d}"):
-                if batch.shape[0] != train_config['batch_size']:
-                    continue
-
-                encoder_input = batch['encoder_input'].to(device) # (batch_size, seq_len)
-                decoder_input = batch['decoder_input'].to(device) # (batch_size, seq_len)
-                encoder_mask = batch['encoder_mask'].to(device) # (batch_size, 1, 1, seq_len)
-                decoder_mask = batch['decoder_mask'].to(device) # (batch_size, 1, seq_len, seq_len)
-                label = batch['label'].to(device) # (batch_size, seq_len)
-
-                # forward pass
-                encoder_output = model.encoder(
-                    src=encoder_input, scr_mask=encoder_mask) # (batch_size, seq_len, d_model)
-                decoder_output = model.decoder(
-                    tgt=decoder_input, tgt_mask=decoder_mask, 
-                    src_output=encoder_output, src_mask=encoder_mask) # (batch_size, seq_len, d_model)
-
-                output = model.project(decoder_output) # (batch_size, seq_len, tgt_vocab_size)
-
-                # loss calculation
-                loss = loss_fn(output.view(-1, tokenizer_tgt.vocab_size), label.view(-1))
-                writer.add_scalar("Loss/val", loss.item(), epoch)
-                writer.flush()
-
-                # set postfix for tqdm
-                postfix = {
-                    "valid_loss": loss.item(),
-                }
-                tqdm.set_postfix(postfix, refresh=True)
-   
-        # Save model
-        torch.save(model.state_dict(), config['model']['path']+f"epoch_{epoch}.pt")
-        
+    # tensorboard logging
+    callbacks = [
+        callback.EarlyStopping(**train_config['callbacks']['early_stopping']),
+        callback.ModelCheckpoint(**train_config['callbacks']['model_checkpoint']),
+        callback.LearningRateMonitor(logging_interval='step'),
+        callback.DeviceStatsMonitor(),  
+        callback.ModelSummary(max_depth=5),
+    ]
+    
+    tensorboard_logger = logger.TensorBoardLogger(
+        save_dir=train_config['logger']['save_dir'],
+        name=train_config['logger']['name'],    
+    )
+    
+    trainer = L.Trainer(
+        **train_config['trainer'],
+        logger=tensorboard_logger,
+        callbacks=callbacks,
+    )
+    
+    try:
+        trainer.fit(model, dataset)
+    except KeyboardInterrupt:
+        print("Keyboard Interrupted... Continuing Further")
+    
+    # Saving the model
+    torch.save(model.model, train_config['model_path'])   
+    

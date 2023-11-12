@@ -10,3 +10,4 @@ data/train3.ta.txt
 data/train3.en.txt
 data/dataset_large.parquet
 .dvc
+logs
