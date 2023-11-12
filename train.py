@@ -171,5 +171,6 @@ if __name__ == '__main__':
         print("Keyboard Interrupted... Continuing Further")
     
     # Saving the model
-    torch.save(model.model, train_config['model_path'])   
+    torch.save(model.model.state_dict(), train_config['model_path'])   
+    
     
