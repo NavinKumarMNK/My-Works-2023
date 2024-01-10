@@ -22,3 +22,15 @@
 
 ### Frontend
 - React.js
+
+## Setup
+
+For development
+```bash
+docker build -t your_image_name -f dev.Dockerfile .
+```
+
+Run the container
+```bash
+docker run -it -p 22:22 -p 8080:8080 -v /path:/app image-name bash
+```
