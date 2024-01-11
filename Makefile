@@ -6,7 +6,7 @@ build:
 	docker build -t $(IMAGE_NAME) $(DOCKERFILE_PATH)
 
 run:
-	docker run -v "$(pwd):/app" -p 8000:8000 --name slabgpt-ctr -it --rm slabgpt
+	docker run -v "$(shell pwd):/app" -p 8000:8000 --name slabgpt-ctr -it --rm slabgpt
 
 stop:
 	docker stop $(CONTAINER_NAME)

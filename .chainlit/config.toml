@@ -9,7 +9,7 @@ user_env = []
 session_timeout = 3600
 
 # Enable third parties caching (e.g LangChain cache)
-cache = false
+cache = true
 
 # Follow symlink for asset mount (see https://github.com/Chainlit/chainlit/issues/317)
 # follow_symlink = false
@@ -19,7 +19,7 @@ cache = false
 prompt_playground = true
 
 # Process and display HTML in messages. This can be a security risk (see https://stackoverflow.com/questions/19603097/why-is-it-dangerous-to-render-user-generated-html-or-javascript)
-unsafe_allow_html = false
+unsafe_allow_html = true
 
 # Process and display mathematical expressions. This can clash with "$" characters in messages.
 latex = false
@@ -29,15 +29,15 @@ multi_modal = true
 
 # Allows user to use speech to text
 [features.speech_to_text]
-    enabled = false
-    # language = "en-US"
+    enabled = true
+    language = "en-US"
 
 [UI]
 # Name of the app and chatbot.
 name = "SlabGPT"
 
 # Show the readme while the thread is empty.
-show_readme_as_default = false
+show_readme_as_default = true
 
 # Description of the app and chatbot. This is used for HTML tags.
 # description = ""

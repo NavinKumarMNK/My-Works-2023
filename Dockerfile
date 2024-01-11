@@ -8,30 +8,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Set the working directory
 WORKDIR /app
-
-COPY requirements.txt .
-
+COPY . .
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
 
-COPY . .
-VOLUME /app
-
-# By default, install cpu version
-RUN pip install --upgrade llama-cpp-python
-
-# Uncomment below line to install gpu version
-# RUN CMAKE_ARGS="-DLLAMA_CUBLAS=on" FORCE_CMAKE=1 pip install llama-cpp-python
-
-# Uncomment below line to install metal version
-# RUN CMAKE_ARGS="-DLLAMA_METAL=on" FORCE_CMAKE=1 pip install llama-cpp-python
-
-# Run any necessary setup script or prefetching
 RUN python prefetch.py
 
-# Expose the necessary port
-EXPOSE 8000
 
-# Specify the default command with the '-w' option
-CMD ["chainlit", "run", "app.py", "-w"]
+ENV TOKENIZERS_PARALLELISM=false
+ENV LITERAL_KEY cl_xZM9KkFEVlsrTzhEizi/zUH9m9F9txawfKZIBqCN5JA=
+
+ARG LLAMA_CPP_VERSION=cpu
+RUN if [ "$LLAMA_CPP_VERSION" = "gpu" ] ; then CMAKE_ARGS="-DLLAMA_CUBLAS=on" FORCE_CMAKE=1 pip install llama-cpp-python; \
+    elif [ "$LLAMA_CPP_VERSION" = "metal" ] ; then CMAKE_ARGS="-DLLAMA_METAL=on" FORCE_CMAKE=1 pip install llama-cpp-python; \
+    else pip install --upgrade llama-cpp-python; fi
+
+RUN python credentials.py
+EXPOSE 8000
+CMD ["chainlit", "run", "app.py"]

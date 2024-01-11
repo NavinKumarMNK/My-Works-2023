@@ -1,6 +1,7 @@
 .files
-models
-data
+models/*.gguf
+data/*.md
+!data/readme.md
 __pycache__
 .DS_Store
 ```
