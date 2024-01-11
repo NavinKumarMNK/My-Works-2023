@@ -1,0 +1,6 @@
+langchain-community
+langchain
+chainlit
+pyyaml
+fastembed
+faiss-cpu
