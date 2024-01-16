@@ -18,8 +18,8 @@ import os
 import re
 
 
-load_dotenv()
-secret = os.getenv('CHAINLIT_AUTH_SECRET')
+#load_dotenv()
+#secret = os.getenv('CHAINLIT_AUTH_SECRET')
 
 # yaml config loaded from config.yaml
 with open("config.yaml", "r") as f:
@@ -37,11 +37,6 @@ def init_data():
     markdown_splitter = MarkdownHeaderTextSplitter(
         headers_to_split_on=headers_to_split_on
     )
-    chunk_size = 2500
-    chunk_overlap = 2000
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=chunk_size, chunk_overlap=chunk_overlap
-    )
     
     docs = []
     parent_dir = config['data']
@@ -53,9 +48,17 @@ def init_data():
             markdown_text = re.sub(r"https?://\S+", "", markdown_text)
             markdown_text = markdown_text.replace("[]", "").replace("()", "")
             docs.extend(markdown_splitter.split_text(markdown_text))
+    
+    chunk_size = 1000
+    chunk_overlap = 250
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size, chunk_overlap=chunk_overlap
+    )
+    
     splits = text_splitter.split_documents(docs)
     return splits
 
+    
 model_path = config['model_dir'] + "/" + config['model']
 callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
     
@@ -98,22 +101,23 @@ elif config['device'] == 'metal':
     )
 
 
-embedder = FastEmbedEmbeddings() # LlamaCppEmbeddings(model_path=model_path)
+embedder = FastEmbedEmbeddings(model_name="BAAI/bge-base-en-v1.5")
 splits = init_data()
+        
 vectordb = FAISS.from_documents(documents=splits, embedding=embedder)
 retriever = vectordb.as_retriever()
 
-
+'''
 @cl.password_auth_callback
 def auth_callback(username: str, password: str) -> Optional[cl.User]:
   if (username, password) == (config['username'], config["password"]):
     return cl.User(identifier="admin", metadata={"role": "admin", "provider": secret})
   else:
     return None
-
+'''
 @cl.on_chat_start
 async def on_chat_start():
-    template = """Answer the question based only on the following context, mention the title of the docs that the answer is coming from. Limit it to one answer.
+    template = """Your a brilliant bot who can comprehensively answer the users question from the given context Be polite and answer question breifly based on the context.
     Context: {context}
 
     Question: {question}
@@ -127,11 +131,13 @@ async def on_chat_start():
 @cl.on_message
 async def on_message(message: cl.Message):
     runnable = cl.user_session.get("runnable")
-    
+
+    docs = retriever.invoke(message.content)
+    docs = docs[0].page_content
     msg = cl.Message(content="")
     stream = runnable.astream({
             "question": message.content,
-            "context": retriever,
+            "context": docs,
             },
             config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
         )

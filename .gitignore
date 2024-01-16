@@ -5,3 +5,6 @@ data/*.md
 __pycache__
 .DS_Store
 ```
+models
+.chainlit/.langchain.db
+splits.txt

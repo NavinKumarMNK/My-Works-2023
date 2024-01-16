@@ -68,7 +68,7 @@
       <ul>
         <li>Retrieval Augmentation Generation/li>
         <li>Mistral 7b - Q4 Model</li>
-        <li>Memory Footprint of 5gb, Local LLM</li>
+        <li>Memory Footprint of 7gb, Local LLM</li>
         <li>Intelligent Document Inference</li>
         <!-- Add more features as needed -->
       </ul>

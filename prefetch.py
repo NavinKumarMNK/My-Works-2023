@@ -10,7 +10,7 @@ def download_entire_repo(repo_id, local_dir, local_dir_use_symlinks=False):
 
 def download_file(repo_id, filename, local_dir):
     from huggingface_hub import hf_hub_download
-    hf_hub_download(repo_id=repo_id, filename=filename, local_dir=local_dir)
+    hf_hub_download(repo_id=repo_id, filename=filename, local_dir=local_dir, local_dir_use_symlinks=False)
 
 '''
 download_entire_repo(
@@ -27,5 +27,5 @@ download_file(
 )
 
 from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
-embedder = FastEmbedEmbeddings()
+embedder = FastEmbedEmbeddings("BAAI/bge-base-en-v1.5")
 

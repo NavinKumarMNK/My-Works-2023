@@ -24,3 +24,7 @@ Before building the container, check the Dockerfile and config.yaml file for cha
 ```bash
 chainlit run app.py -w
 ```
+
+## Testing
+- [x] on Intel Mac
+- [ ] on Mac M series (Apple Silicon) 
