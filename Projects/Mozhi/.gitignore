@@ -1,0 +1,13 @@
+.hypothesis/
+.logs
+flagged
+__pycache__
+data/train1.en.txt
+data/train1.ta.txt
+data/train2.ta.txt
+data/train2.en.txt
+data/train3.ta.txt
+data/train3.en.txt
+data/dataset_large.parquet
+.dvc
+logs

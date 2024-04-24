@@ -1,0 +1,109 @@
+model:
+  name: "Mozhi"
+  description: "English to Tamil Translator"
+  path: '/workspace/Mozhi/weights/mozhi.pt'
+  parameters:
+    dim_model: 256
+    d_ff: 1024
+    src_vocab_size: 10000
+    tgt_vocab_size: 10000
+    num_heads: 4
+    num_layers: 6
+    dropout: 0.1
+    src_max_seq_len: 256
+    tgt_max_seq_len: 256
+
+tokenizer:
+  dataset_path: /workspace/Mozhi/data/dataset_large.parquet
+  src:
+    special_tokens:
+      bos_token: "<s>"
+      eos_token: "</s>"
+      sep_token: "</s>"
+      cls_token: "<s>"
+      pad_token: "<pad>"
+      mask_token: "<mask>"
+      unk_token: "<unk>"
+    tokenizer_path: '/workspace/Mozhi/weights/tokenizer_en.json'
+    vocab_size: 10000
+    min_frequency: 2
+    lang: 'en'
+  tgt:
+    special_tokens:
+      bos_token: "<s>"
+      eos_token: "</s>"
+      sep_token: "</s>"
+      cls_token: "<s>"
+      pad_token: "<pad>"
+      mask_token: "<mask>"
+      unk_token: "<unk>"
+    tokenizer_path: '/workspace/Mozhi/weights/tokenizer_ta.json'
+    vocab_size: 10000
+    min_frequency: 2
+    lang: 'ta'
+
+data:
+  src: 'en'
+  tgt: 'ta'
+  data_dir: '/workspace/Mozhi/data'
+  dataset_path: '/workspace/Mozhi/data/dataset_large.parquet'
+  src_to_tgt: # src : tgt
+    'train1.en.txt': 'train1.ta.txt'
+    'train2.en.txt': 'train2.ta.txt'
+    'train3.en.txt': 'train3.ta.txt'
+
+train:
+  dataset_path: '/workspace/Mozhi/data/dataset_small.parquet'
+  model_path: '/workspace/Mozhi/weights/mozhi.pt'
+  tokenizer:
+    src: 
+      path: '/workspace/Mozhi/weights/tokenizer_en.json'
+      lang: 'en'
+      seq_len: 256
+    tgt: 
+      path: '/workspace/Mozhi/weights/tokenizer_ta.json'
+      lang: 'ta'
+      seq_len: 256
+  device: 'cuda'
+  batch_size: 16
+  num_workers: 4
+  split_size: 0.1
+  epochs: 10
+  label_smoothing: 0.1
+  optimizer:
+    lr: 0.0001
+    eps: 0.00000000001
+  fine_tune: false
+  logger:
+    save_dir: /workspace/Mozhi/logs
+    name: Seq2Seq
+  trainer:
+    accelerator: gpu
+    strategy: auto
+    fast_dev_run: false
+    check_val_every_n_epoch: 1
+    num_sanity_val_steps: 10
+    enable_progress_bar: true
+    default_root_dir: /workspace/Mozhi/logs
+    max_epochs: 5
+    min_epochs: 1
+    precision: 16-mixed
+    accumulate_grad_batches: 2
+  callbacks:
+    early_stopping:
+      patience: 1
+      monitor: val_loss
+      mode: min
+    model_checkpoint:
+      monitor: val_loss
+      mode: min
+      save_top_k: 1
+      save_weights_only: true
+      filename: '{epoch:02d}-{val_loss:.2f}'
+
+infer:
+  model_path: "/workspace/Mozhi/weights/mozhi-19M.pt"
+  tokenizer_src: "/workspace/Mozhi/weights/tokenizer_en.json"
+  tokenizer_tgt: "/workspace/Mozhi/weights/tokenizer_ta.json"
+  seq_len: 256
+  device: "cuda"
