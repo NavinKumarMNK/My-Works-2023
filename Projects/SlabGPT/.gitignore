@@ -1,0 +1,10 @@
+.files
+models/*.gguf
+data/*.md
+!data/readme.md
+__pycache__
+.DS_Store
+```
+models
+.chainlit/.langchain.db
+splits.txt
